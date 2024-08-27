@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenda de Clientes</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        background-image: url("assets/agenda.jpg");
+        background-size: cover;
+        background-position: center;
+      }
+      .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(
+          255,
+          255,
+          255,
+          0.5
+        ); /* Fondo blanco con opacidad */
+        z-index: -1;
+      }
+      header {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #392ade;
+        color: white;
+        padding: 10px 0;
+      }
+      header img {
+        width: 30px;
+        height: 30px;
+      }
+      header h1 {
+        margin: 5px 0 0 0;
+        font-size: 24px;
+      }
+      .container {
+        padding: 20px;
+        position: relative;
+      }
+      .form-container {
+        background-color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+      }
+      .form-container input {
+        width: calc(100% - 22px);
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+      .form-container button {
+        width: 100%;
+        padding: 10px;
+        background-color: #1e15c9;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .form-container button:hover {
+        background-color: #033798;
+      }
+      .client-list {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+      }
+      .client-list div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #ddd;
+      }
+      .client-list div:last-child {
+        border-bottom: none;
+      }
+      .client-list span {
+        flex-grow: 1;
+        margin-left: 10px;
+      }
+      .client-list button {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .client-list button.edit {
+        background-color: #2196f3;
+        margin-right: 10px;
+      }
+      .client-list button:hover {
+        opacity: 0.8;
+      }
+      .bottom-tab {
+        display: flex;
+        justify-content: space-around;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background-color: #4027cf;
+        padding: 10px 0;
+        box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .bottom-tab button {
+        background-color: transparent;
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .bottom-tab button.active {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="overlay"></div>
+
+    <header>
+      <img
+        src="https://img.icons8.com/ios-filled/50/ffffff/address-book.png"
+        alt="Agenda"
+      />
+      <h1>CARTERA DE CLIENTES</h1>
+    </header>
+
+    <div class="container">
+      <div class="form-container">
+        <h3 id="form-title">Agregar Cliente</h3>
+        <input type="text" id="name" placeholder="Nombre" required />
+        <input type="text" id="phone" placeholder="Teléfono" required />
+        <button onclick="addOrUpdateClient()">Guardar</button>
+      </div>
+      <div class="client-list" id="client-list"></div>
+    </div>
+
+    <div class="bottom-tab">
+      <button class="active" onclick="showSection('add')">Agregar</button>
+      <button onclick="clearAll()">Borrar Todo</button>
+    </div>
+
+    <script>
+      let clients = JSON.parse(localStorage.getItem("clients")) || [];
+      let editIndex = null;
+
+      function renderClients() {
+        const clientList = document.getElementById("client-list");
+        clientList.innerHTML = "";
+        clients.forEach((client, index) => {
+          clientList.innerHTML += `
+                    <div>
+                        <span>${client.name} - ${client.phone}</span>
+                        <button class="edit" onclick="editClient(${index})">Editar</button>
+                        <button onclick="deleteClient(${index})">Eliminar</button>
+                    </div>
+                `;
+        });
+      }
+
+      function addOrUpdateClient() {
+        const name = document.getElementById("name").value;
+        const phone = document.getElementById("phone").value;
+
+        if (name && phone) {
+          if (editIndex !== null) {
+            clients[editIndex] = { name, phone };
+            editIndex = null;
+            document.getElementById("form-title").textContent =
+              "Agregar Cliente";
+          } else {
+            clients.push({ name, phone });
+          }
+          localStorage.setItem("clients", JSON.stringify(clients));
+          renderClients();
+          clearForm();
+          showSection("list");
+        } else {
+          alert("Por favor, completa todos los campos.");
+        }
+      }
+
+      function editClient(index) {
+        document.getElementById("name").value = clients[index].name;
+        document.getElementById("phone").value = clients[index].phone;
+        document.getElementById("form-title").textContent = "Editar Cliente";
+        editIndex = index;
+        showSection("add");
+      }
+
+      function deleteClient(index) {
+        clients.splice(index, 1);
+        localStorage.setItem("clients", JSON.stringify(clients));
+        renderClients();
+      }
+
+      function clearForm() {
+        document.getElementById("name").value = "";
+        document.getElementById("phone").value = "";
+      }
+
+      function showSection(section) {
+        if (section === "list") {
+          document.querySelector(".client-list").style.display = "block";
+          document.querySelector(".form-container").style.display = "none";
+        } else if (section === "add") {
+          document.querySelector(".client-list").style.display = "none";
+          document.querySelector(".form-container").style.display = "block";
+        }
+        document.querySelectorAll(".bottom-tab button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+        if (section === "add") {
+          document
+            .querySelector(".bottom-tab button:nth-child(1)")
+            .classList.add("active");
+        }
+      }
+
+      function clearAll() {
+        if (
+          confirm("¿Estás seguro de que quieres borrar todos los clientes?")
+        ) {
+          clients = [];
+          localStorage.setItem("clients", JSON.stringify(clients));
+          renderClients();
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderClients();
+        showSection("list");
+      });
+    </script>
+  </body>
+</html>
